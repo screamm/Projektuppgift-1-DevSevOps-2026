@@ -1,6 +1,31 @@
-# Projektuppgift-1-DevSevOps-2026
-Projektuppgift: DevSevOps kontinuerlig utveckling och automatiserad testning
+# Todo DevSecOps
 
+Avancerad todo-app för projektuppgift i DevSecOps-kursen: kontinuerlig utveckling och automatiserad testning.
+
+## Getting Started
+
+Installera beroenden och starta utvecklingsservern:
+
+```bash
+npm install
+npm run dev
+```
+
+Öppna [http://localhost:3000](http://localhost:3000) i webbläsaren. Redigera startsidan i `app/page.tsx`.
+
+Övriga skript:
+
+```bash
+npm run build   # produktionsbygge
+npm run start   # kör produktionsbygge
+npm run lint    # ESLint
+```
+
+---
+
+# Projektuppgift-1-DevSevOps-2026
+
+Projektuppgift: DevSevOps kontinuerlig utveckling och automatiserad testning
 
 Översikt
 Ni ska under kursern bygga en fullstack-webbapplikation med ett REST API och sätta upp en komplett CI/CD-pipeline i GitHub Actions. Applikationens tema och omfattning väljer ni själva, men den måste uppfylla de tekniska kraven nedan.
