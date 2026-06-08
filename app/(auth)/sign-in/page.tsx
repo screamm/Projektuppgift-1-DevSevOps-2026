@@ -1,7 +1,56 @@
-'use client'
+"use client";
+
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { FormEvent, useState } from "react";
+
+type LoginResponse = {
+  success: boolean;
+  message: string;
+};
 
 export default function SignInPage() {
+  const router = useRouter();
+  const [message, setMessage] = useState("");
+  const [isError, setIsError] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    setMessage("");
+    setIsSubmitting(true);
+
+    const formData = new FormData(form);
+
+    try {
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({
+          email: formData.get("email"),
+          password: formData.get("password"),
+        }),
+      });
+      const data = (await response.json()) as LoginResponse;
+      const failed = !response.ok || !data.success;
+
+      setIsError(failed);
+      setMessage(data.message);
+
+      if (!failed) {
+        router.replace("/dashboard");
+      }
+    } catch {
+      setIsError(true);
+      setMessage("Could not connect to the server. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
   return (
     <div className="flex min-h-full flex-1 items-center justify-center bg-zinc-50 px-4 py-12 font-sans dark:bg-zinc-950">
       <div className="w-full max-w-md">
@@ -18,7 +67,7 @@ export default function SignInPage() {
         </div>
 
         <div className="rounded-2xl border border-zinc-200/80 bg-white p-8 shadow-sm shadow-zinc-200/50 dark:border-zinc-800 dark:bg-zinc-900 dark:shadow-none">
-          <form className="space-y-5" action="#" method="post">
+          <form className="space-y-5" onSubmit={handleSubmit}>
             <div className="space-y-2">
               <label
                 htmlFor="email"
@@ -57,10 +106,24 @@ export default function SignInPage() {
 
             <button
               type="submit"
-              className="mt-2 flex h-11 w-full items-center justify-center rounded-xl bg-zinc-900 text-sm font-medium text-white transition-colors hover:bg-zinc-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900 dark:bg-zinc-50 dark:text-zinc-900 dark:hover:bg-zinc-200 dark:focus-visible:outline-zinc-50"
+              disabled={isSubmitting}
+              className="mt-2 flex h-11 w-full items-center justify-center rounded-xl bg-zinc-900 text-sm font-medium text-white transition-colors hover:bg-zinc-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-zinc-50 dark:text-zinc-900 dark:hover:bg-zinc-200 dark:focus-visible:outline-zinc-50"
             >
-              Sign in
+              {isSubmitting ? "Signing in..." : "Sign in"}
             </button>
+
+            {message && (
+              <p
+                aria-live="polite"
+                className={`text-sm ${
+                  isError
+                    ? "text-red-600 dark:text-red-400"
+                    : "text-green-700 dark:text-green-400"
+                }`}
+              >
+                {message}
+              </p>
+            )}
           </form>
         </div>
 
