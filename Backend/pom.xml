@@ -111,6 +111,9 @@
                                 <format>SARIF</format>
                             </formats>
                             <failBuildOnCVSS>7</failBuildOnCVSS>
+                            <!-- OSS Index kräver numera konto (anonyma anrop får 401);
+                                 NVD via API-nyckel är vår sårbarhetskälla. -->
+                            <ossIndexAnalyzerEnabled>false</ossIndexAnalyzerEnabled>
                         </configuration>
                         <executions>
                             <execution>

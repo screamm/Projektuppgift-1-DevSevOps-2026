@@ -336,7 +336,7 @@ The main pipeline with five jobs. It triggers on pushes to `main` and `dev`, on 
 | `frontend-checks` | `npm ci`, ESLint, a TypeScript check (`npx tsc --noEmit`), `npm audit --omit=dev --audit-level=high` (blocking gate on high/critical advisories; two known moderate advisories via `next`/`postcss` are documented in the workflow), and a production build |
 | `api-tests` | Downloads the backend jar, starts it, waits for `/api/tasks` to respond, then runs the Newman collection (`npm run test:api`). Depends on `backend-tests` |
 | `e2e-tests` | Downloads and starts the backend jar, builds the production frontend, and runs Playwright (Chromium) against it (`npm run test:e2e`). Uploads the Playwright report on failure. Depends on `backend-tests` |
-| `dependency-check` | OWASP Dependency-Check on the backend dependencies, with SARIF upload to GitHub Code Scanning and an HTML report artifact. Currently non-blocking (`continue-on-error: true`) until the `NVD_API_KEY` repository secret is configured, since NVD downloads are slow and unstable without an API key |
+| `dependency-check` | OWASP Dependency-Check on the backend dependencies, with SARIF upload to GitHub Code Scanning and an HTML report artifact. Blocking gate (`failBuildOnCVSS: 7`) using the `NVD_API_KEY` repository secret; the OSS Index analyzer is disabled since anonymous access now returns 401 |
 
 ### Frontend CI (`frontendWorkflow.yml`)
 

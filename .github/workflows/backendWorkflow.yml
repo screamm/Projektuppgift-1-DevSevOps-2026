@@ -189,11 +189,8 @@ jobs:
   dependency-check:
     name: Säkerhet – OWASP Dependency-Check (backend)
     runs-on: ubuntu-latest
-    # Utan NVD_API_KEY-secret är NVD-nedladdningen mycket långsam/instabil,
-    # därför blockerar jobbet inte pipelinen ännu. Ta bort continue-on-error
-    # när NVD_API_KEY finns som repo-secret. (npm audit i frontend-jobbet är
-    # det blockerande dependency-säkerhetssteget.)
-    continue-on-error: true
+    # Blockerande gate (failBuildOnCVSS >= 7) sedan NVD_API_KEY finns som
+    # repo-secret och beroendena patchats (Spring Boot 3.5.15, log4j 2.25.4).
 
     defaults:
       run:
