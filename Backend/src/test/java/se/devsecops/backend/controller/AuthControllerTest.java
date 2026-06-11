@@ -16,6 +16,7 @@ import org.springframework.http.ResponseEntity;
 import se.devsecops.backend.model.CreateUserRequest;
 import se.devsecops.backend.model.CreateUserResponse;
 import se.devsecops.backend.model.LoginRequest;
+import se.devsecops.backend.model.LoginResult;
 import se.devsecops.backend.model.LoginResponse;
 import se.devsecops.backend.service.UserService;
 
@@ -64,7 +65,7 @@ class AuthControllerTest {
             new LoginResponse(true, "Login successful", "test@example.com");
         when(userService.login(request)).thenReturn(expectedResponse);
 
-        ResponseEntity<LoginResponse> response = authController.login(request);
+        ResponseEntity<LoginResult> response = authController.login(request);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertSame(expectedResponse, response.getBody());
@@ -78,7 +79,7 @@ class AuthControllerTest {
             new LoginResponse(false, "Invalid email or password");
         when(userService.login(request)).thenReturn(expectedResponse);
 
-        ResponseEntity<LoginResponse> response = authController.login(request);
+        ResponseEntity<LoginResult> response = authController.login(request);
 
         assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
         assertSame(expectedResponse, response.getBody());

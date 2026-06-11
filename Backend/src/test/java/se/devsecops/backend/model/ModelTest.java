@@ -61,7 +61,7 @@ class ModelTest {
 
     @Test
     void loginResponseSupportsConstructorAndSetters() {
-        LoginResponse response = new LoginResponse(true, "Initial");
+        LoginResult response = new LoginResult(true, "Initial");
 
         assertTrue(response.isSuccess());
         assertEquals("Initial", response.getMessage());

@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.RestController;
 import se.devsecops.backend.model.CreateUserRequest;
 import se.devsecops.backend.model.CreateUserResponse;
 import se.devsecops.backend.model.LoginRequest;
-import se.devsecops.backend.model.LoginResponse;
+import se.devsecops.backend.model.LoginResult;
 import se.devsecops.backend.service.UserService;
 
 @RestController
@@ -37,8 +37,8 @@ public class AuthController {
     }
 
     @PostMapping("/api/auth/login")
-    public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest request) {
-        LoginResponse response = userService.login(request);
+    public ResponseEntity<LoginResult> login(@RequestBody LoginRequest request) {
+        LoginResult response = userService.login(request);
 
         if (response.isSuccess()) {
             return ResponseEntity.ok(response);
