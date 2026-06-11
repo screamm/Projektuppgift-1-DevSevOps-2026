@@ -2,37 +2,337 @@
 
 Avancerad todo-app för projektuppgift i DevSecOps-kursen: kontinuerlig utveckling och automatiserad testning.
 
-## Frontend och backend
+Fullstack-app med **Next.js-frontend** och **Java 17 / Spring Boot-backend**. Frontend anropar backend via Next.js Route Handlers (BFF) under `/api/*`, som proxar till backend på `http://localhost:8080` (konfigurerbart via `BACKEND_URL`).
 
-Frontendens registrerings- och inloggningsformulär skickar anrop via Next.js
-Route Handlers till backend. Backendadressen är som standard
-`http://localhost:8080`.
+> **Lagring:** Projektet använder **in-memory storage** (`HashMap` i `UserService`) och **mockad dashboard-data** (hårdkodade tasksiffror). Det är lämpligt för kurs/demo, men **inte produktionsklart** — data försvinner vid omstart, lösenord lagras i klartext och det finns ingen riktig session/JWT.
 
-Sätt miljövariabeln `BACKEND_URL` innan frontend startas om backend körs på en
-annan adress:
+## How to run and verify
 
-```env
-BACKEND_URL=http://localhost:8080
+### Krav
+
+- **Java 17** (JDK)
+- **Maven 3.9+**
+- **Node.js 20+** och npm
+
+### Starta backend
+
+```bash
+cd Backend
+mvn spring-boot:run
 ```
 
-## Getting Started
+Backend lyssnar på [http://localhost:8080](http://localhost:8080).
 
-Installera beroenden och starta utvecklingsservern:
+### Starta frontend
 
 ```bash
 npm install
 npm run dev
 ```
 
-Öppna [http://localhost:3000](http://localhost:3000) i webbläsaren. Redigera startsidan i `app/page.tsx`.
+Öppna [http://localhost:3000](http://localhost:3000). Om backend körs på annan adress:
 
-Övriga skript:
+```env
+BACKEND_URL=http://localhost:8080
+```
+
+### Kör tester och verifiering
+
+**Backend (från `Backend/`):**
 
 ```bash
-npm run build   # produktionsbygge
-npm run start   # kör produktionsbygge
-npm run lint    # ESLint
+mvn test
 ```
+
+**Frontend (från projektroten):**
+
+```bash
+npx next build
+npm run lint
+```
+
+Följande kommandon har verifierats och passerar:
+
+| Kommando | Resultat |
+|----------|----------|
+| `mvn test` | 46 backend-tester |
+| `npx next build` | Produktionsbygge OK |
+| `npm run lint` | ESLint OK |
+
+## API endpoints
+
+Bas-URL: `http://localhost:8080`
+
+Frontend exponerar samma endpoints under `/api/*` (t.ex. `http://localhost:3000/api/health`).
+
+Lösenord returneras **aldrig** i responses.
+
+---
+
+### 1. Registrera användare
+
+| | |
+|---|---|
+| **Method** | `POST` |
+| **URL** | `/api/auth/register` |
+| **Syfte** | Skapa nytt användarkonto |
+
+**Request body:**
+
+```json
+{
+  "username": "Anna Andersson",
+  "email": "anna@example.com",
+  "password": "password1"
+}
+```
+
+**Response (201 Created):**
+
+```json
+{
+  "exists": false,
+  "message": "User created"
+}
+```
+
+**Vanliga statuskoder:** `201`, `400` (valideringsfel), `409` (e-post upptagen)
+
+---
+
+### 2. Logga in
+
+| | |
+|---|---|
+| **Method** | `POST` |
+| **URL** | `/api/auth/login` |
+| **Syfte** | Autentisera användare |
+
+**Request body:**
+
+```json
+{
+  "email": "anna@example.com",
+  "password": "password1"
+}
+```
+
+**Response (200 OK):**
+
+```json
+{
+  "success": true,
+  "message": "Login successful",
+  "email": "anna@example.com"
+}
+```
+
+**Vanliga statuskoder:** `200`, `400` (ogiltig e-post), `401` (felaktiga uppgifter)
+
+---
+
+### 3. Hämta profil
+
+| | |
+|---|---|
+| **Method** | `GET` |
+| **URL** | `/api/profile?email=anna@example.com` |
+| **Syfte** | Hämta inloggad användares profil (namn och e-post) |
+
+**Response (200 OK):**
+
+```json
+{
+  "username": "Anna Andersson",
+  "email": "anna@example.com"
+}
+```
+
+**Vanliga statuskoder:** `200`, `400` (saknad/ogiltig e-post), `404` (användare saknas)
+
+---
+
+### 4. Uppdatera profil
+
+| | |
+|---|---|
+| **Method** | `PUT` |
+| **URL** | `/api/profile` |
+| **Syfte** | Uppdatera namn och/eller e-post |
+
+**Request body:**
+
+```json
+{
+  "currentEmail": "anna@example.com",
+  "username": "Anna A.",
+  "email": "anna.a@example.com"
+}
+```
+
+**Response (200 OK):**
+
+```json
+{
+  "success": true,
+  "message": "Profile updated",
+  "email": "anna.a@example.com"
+}
+```
+
+**Vanliga statuskoder:** `200`, `400` (tomt namn, ogiltig e-post), `404`, `409` (e-post upptagen)
+
+---
+
+### 5. Lista användare
+
+| | |
+|---|---|
+| **Method** | `GET` |
+| **URL** | `/api/users` |
+| **Syfte** | Hämta alla registrerade användare (utan lösenord) |
+
+**Response (200 OK):**
+
+```json
+{
+  "users": [
+    {
+      "username": "Anna Andersson",
+      "email": "anna@example.com"
+    }
+  ]
+}
+```
+
+**Vanliga statuskoder:** `200`
+
+---
+
+### 6. Hämta specifik användare
+
+| | |
+|---|---|
+| **Method** | `GET` |
+| **URL** | `/api/users/{email}` |
+| **Syfte** | Hämta en användare via e-post |
+
+Exempel: `/api/users/anna%40example.com`
+
+**Response (200 OK):**
+
+```json
+{
+  "username": "Anna Andersson",
+  "email": "anna@example.com"
+}
+```
+
+**Vanliga statuskoder:** `200`, `400`, `404`
+
+---
+
+### 7. Ta bort användare
+
+| | |
+|---|---|
+| **Method** | `DELETE` |
+| **URL** | `/api/users/{email}` |
+| **Syfte** | Radera ett användarkonto |
+
+Exempel: `/api/users/anna%40example.com`
+
+**Response (200 OK):**
+
+```json
+{
+  "success": true,
+  "message": "User deleted"
+}
+```
+
+**Vanliga statuskoder:** `200`, `400`, `404`
+
+---
+
+### 8. Uppdatera lösenord
+
+| | |
+|---|---|
+| **Method** | `PUT` |
+| **URL** | `/api/users/{email}/password` |
+| **Syfte** | Byta lösenord för en användare |
+
+Exempel: `/api/users/anna%40example.com/password`
+
+**Request body:**
+
+```json
+{
+  "currentPassword": "password1",
+  "newPassword": "newpassword"
+}
+```
+
+**Response (200 OK):**
+
+```json
+{
+  "success": true,
+  "message": "Password updated"
+}
+```
+
+**Vanliga statuskoder:** `200`, `400` (fel nuvarande lösenord, för kort nytt lösenord), `404`
+
+---
+
+### 9. Health check
+
+| | |
+|---|---|
+| **Method** | `GET` |
+| **URL** | `/api/health` |
+| **Syfte** | Kontrollera att backend svarar |
+
+**Response (200 OK):**
+
+```json
+{
+  "status": "ok",
+  "message": "Backend is running"
+}
+```
+
+**Vanliga statuskoder:** `200`
+
+---
+
+### 10. Dashboard-sammanfattning
+
+| | |
+|---|---|
+| **Method** | `GET` |
+| **URL** | `/api/dashboard/summary?email=anna@example.com` |
+| **Syfte** | Hämta användarinfo och översikt till dashboard |
+
+**Response (200 OK):**
+
+```json
+{
+  "username": "Anna Andersson",
+  "email": "anna@example.com",
+  "accountStatus": "active",
+  "userCount": 1,
+  "tasksToday": 3,
+  "completed": 0,
+  "remaining": 3
+}
+```
+
+> `tasksToday`, `completed` och `remaining` är **mockade värden** tills en riktig task-resurs finns.
+
+**Vanliga statuskoder:** `200`, `400`, `404`
 
 ---
 

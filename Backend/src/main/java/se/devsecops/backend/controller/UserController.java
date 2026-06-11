@@ -1,21 +1,41 @@
 package se.devsecops.backend.controller;
 
+<<<<<<< HEAD
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+=======
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
+>>>>>>> ee89d5791ff178cc678277138af071e0a049a893
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import se.devsecops.backend.model.ApiResponse;
 import se.devsecops.backend.model.ChangePasswordRequest;
 import se.devsecops.backend.model.CreateUserRequest;
 import se.devsecops.backend.model.CreateUserResponse;
+<<<<<<< HEAD
+import se.devsecops.backend.model.DeleteUserResponse;
+import se.devsecops.backend.model.ListUsersResponse;
+import se.devsecops.backend.model.UpdatePasswordRequest;
+import se.devsecops.backend.model.UpdatePasswordResponse;
+import java.util.Map;
+
+import se.devsecops.backend.model.UserResponse;
+=======
 import se.devsecops.backend.model.ProfileResponse;
 import se.devsecops.backend.model.UpdateProfileRequest;
+>>>>>>> ee89d5791ff178cc678277138af071e0a049a893
 import se.devsecops.backend.service.UserService;
 
 @RestController
+@RequestMapping("/api/users")
 public class UserController {
 
     private final UserService userService;
@@ -24,11 +44,77 @@ public class UserController {
         this.userService = userService;
     }
 
-    @PostMapping("/api/users")
-    public CreateUserResponse createUser(@RequestBody CreateUserRequest request) {
-        return userService.createUser(request);
+    @PostMapping
+    public ResponseEntity<CreateUserResponse> createUser(@RequestBody CreateUserRequest request) {
+        CreateUserResponse response = userService.createUser(request);
+
+        if (response.isExists()) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
+        }
+
+        if ("User created".equals(response.getMessage())) {
+            return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        }
+
+        return ResponseEntity.badRequest().body(response);
     }
 
+<<<<<<< HEAD
+    @GetMapping
+    public ResponseEntity<ListUsersResponse> listUsers() {
+        return ResponseEntity.ok(userService.listUsers());
+    }
+
+    @GetMapping("/{email}")
+    public ResponseEntity<?> getUser(@PathVariable String email) {
+        UserResponse response = userService.getUser(email);
+
+        if (response != null) {
+            return ResponseEntity.ok(response);
+        }
+
+        String error = userService.getUserLookupError(email);
+
+        if ("User not found".equals(error)) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(Map.of("message", error));
+        }
+
+        return ResponseEntity.badRequest().body(Map.of("message", error));
+    }
+
+    @DeleteMapping("/{email}")
+    public ResponseEntity<DeleteUserResponse> deleteUser(@PathVariable String email) {
+        DeleteUserResponse response = userService.deleteUser(email);
+
+        if (response.isSuccess()) {
+            return ResponseEntity.ok(response);
+        }
+
+        if ("User not found".equals(response.getMessage())) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+        }
+
+        return ResponseEntity.badRequest().body(response);
+    }
+
+    @PutMapping("/{email}/password")
+    public ResponseEntity<UpdatePasswordResponse> updatePassword(
+        @PathVariable String email,
+        @RequestBody UpdatePasswordRequest request
+    ) {
+        UpdatePasswordResponse response = userService.updatePassword(email, request);
+
+        if (response.isSuccess()) {
+            return ResponseEntity.ok(response);
+        }
+
+        if ("User not found".equals(response.getMessage())) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+        }
+
+        return ResponseEntity.badRequest().body(response);
+=======
     @GetMapping("/api/users/{email}")
     public ProfileResponse getProfile(@PathVariable String email) {
         return userService.getProfile(email);
@@ -48,5 +134,6 @@ public class UserController {
         @RequestBody ChangePasswordRequest request
     ) {
         return userService.changePassword(email, request);
+>>>>>>> ee89d5791ff178cc678277138af071e0a049a893
     }
 }
