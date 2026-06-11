@@ -1,0 +1,552 @@
+{
+  "info": {
+    "name": "DevSecOps Task API",
+    "description": "API tests for the Spring Boot Task backend (Tasks CRUD + Users/Auth). Designed to run top-to-bottom with Newman against a freshly started backend (seed data present), no manual steps required. Override baseUrl with --env-var baseUrl=<url> if needed.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Tasks",
+      "item": [
+        {
+          "name": "01 GET /api/tasks - list contains seed task",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response body is an array', function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json).to.be.an('array');",
+                  "});",
+                  "",
+                  "pm.test('List contains seed task \"Plan the next sprint\" with priority HIGH', function () {",
+                  "    const json = pm.response.json();",
+                  "    const seed = json.find(function (t) { return t.title === 'Plan the next sprint'; });",
+                  "    pm.expect(seed, 'seed task \"Plan the next sprint\" not found in list').to.exist;",
+                  "    pm.expect(seed.priority).to.eql('HIGH');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/tasks",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "tasks"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "02 POST /api/tasks - create valid task",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Body has numeric id', function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('id');",
+                  "    pm.expect(json.id).to.be.a('number');",
+                  "    pm.collectionVariables.set('taskId', String(json.id));",
+                  "    pm.collectionVariables.set('taskTitle', json.title);",
+                  "});",
+                  "",
+                  "pm.test('New task has completed = false', function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.completed).to.eql(false);",
+                  "});",
+                  "",
+                  "pm.test('Body echoes title, priority and dueDate', function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.title).to.include('API test task');",
+                  "    pm.expect(json.priority).to.eql('MEDIUM');",
+                  "    pm.expect(json.dueDate).to.eql('2026-07-01');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"title\": \"API test task {{$timestamp}}\",\n    \"priority\": \"MEDIUM\",\n    \"dueDate\": \"2026-07-01\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/tasks",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "tasks"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "03 GET /api/tasks/{id} - fetch created task",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Body id matches created taskId', function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(String(json.id)).to.eql(pm.collectionVariables.get('taskId'));",
+                  "});",
+                  "",
+                  "pm.test('Body title matches created task title', function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.title).to.eql(pm.collectionVariables.get('taskTitle'));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/tasks/{{taskId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "tasks", "{{taskId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "04 POST /api/tasks - empty title rejected",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 400', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test('Body has message property', function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('message');",
+                  "});",
+                  "",
+                  "pm.test('Body has validation error for title (errors.title)', function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('errors');",
+                  "    pm.expect(json.errors).to.have.property('title');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"title\": \"\",\n    \"priority\": \"MEDIUM\",\n    \"dueDate\": \"2026-07-01\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/tasks",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "tasks"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "05 POST /api/tasks - invalid priority rejected",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 400', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test('No task was created (body has no task id)', function () {",
+                  "    let body;",
+                  "    try {",
+                  "        body = pm.response.json();",
+                  "    } catch (e) {",
+                  "        body = {};",
+                  "    }",
+                  "    pm.expect(body).to.not.have.property('id');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"title\": \"Task with invalid priority\",\n    \"priority\": \"URGENT\",\n    \"dueDate\": \"2026-07-01\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/tasks",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "tasks"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "06 PUT /api/tasks/{id} - mark task completed",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Body has completed = true', function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.completed).to.eql(true);",
+                  "});",
+                  "",
+                  "pm.test('Body keeps same id, title and priority', function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(String(json.id)).to.eql(pm.collectionVariables.get('taskId'));",
+                  "    pm.expect(json.title).to.eql(pm.collectionVariables.get('taskTitle'));",
+                  "    pm.expect(json.priority).to.eql('MEDIUM');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"title\": \"{{taskTitle}}\",\n    \"priority\": \"MEDIUM\",\n    \"dueDate\": \"2026-07-01\",\n    \"completed\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/tasks/{{taskId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "tasks", "{{taskId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "07 PUT /api/tasks/999999 - update missing task",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 404', function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});",
+                  "",
+                  "pm.test('Body has message property', function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('message');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"title\": \"Ghost task\",\n    \"priority\": \"LOW\",\n    \"dueDate\": null,\n    \"completed\": false\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/tasks/999999",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "tasks", "999999"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "08 DELETE /api/tasks/{id} - delete created task",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 204', function () {",
+                  "    pm.response.to.have.status(204);",
+                  "});",
+                  "",
+                  "pm.test('Response body is empty', function () {",
+                  "    pm.expect(pm.response.text() || '').to.eql('');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/tasks/{{taskId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "tasks", "{{taskId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "09 GET /api/tasks/{id} - deleted task is gone",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 404 after delete', function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});",
+                  "",
+                  "pm.test('Body has message property', function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('message');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/tasks/{{taskId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "tasks", "{{taskId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "10 DELETE /api/tasks/999999 - delete missing task",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 404', function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});",
+                  "",
+                  "pm.test('Body has message property', function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('message');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/tasks/999999",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "tasks", "999999"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Users & Auth",
+      "item": [
+        {
+          "name": "11 POST /api/users - create user with unique email",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Unique email per run (timestamp-based) so the suite can be re-run without manual cleanup.",
+                  "// Stored as collection variables so the login test (12) can target the same user.",
+                  "const ts = Date.now();",
+                  "pm.collectionVariables.set('userName', 'apitester' + ts);",
+                  "pm.collectionVariables.set('userEmail', 'apitester' + ts + '@example.com');",
+                  "pm.collectionVariables.set('userPassword', 'C0rrectPassw0rd!');"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Body message is \"User created\"', function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.message).to.eql('User created');",
+                  "});",
+                  "",
+                  "pm.test('Body has exists = false', function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.exists).to.eql(false);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"username\": \"{{userName}}\",\n    \"email\": \"{{userEmail}}\",\n    \"password\": \"{{userPassword}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "12 POST /api/auth/login - wrong password rejected",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Note: per contract we assert on status code and the message field only,",
+                  "// since the boolean field name (e.g. 'success') may vary.",
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Body message indicates invalid credentials', function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('message');",
+                  "    pm.expect(json.message).to.include('Invalid');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"{{userEmail}}\",\n    \"password\": \"DefinitelyWrongPassword123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login"]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080",
+      "type": "string"
+    },
+    {
+      "key": "taskId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "taskTitle",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "userName",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "userEmail",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "userPassword",
+      "value": "",
+      "type": "string"
+    }
+  ]
+}
