@@ -57,3 +57,11 @@ target/
 
 # Environment examples can be committed
 !.env.example
+
+# Playwright-artefakter
+/playwright-report/
+/test-results/
+
+# Lokala planeringsdokument — ska inte lämnas in
+sprints/
+claudedocs/
