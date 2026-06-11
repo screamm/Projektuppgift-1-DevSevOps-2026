@@ -113,7 +113,7 @@
                             <failBuildOnCVSS>7</failBuildOnCVSS>
                             <!-- OSS Index kräver numera konto (anonyma anrop får 401);
                                  NVD via API-nyckel är vår sårbarhetskälla. -->
-                            <ossIndexAnalyzerEnabled>false</ossIndexAnalyzerEnabled>
+                            <ossindexAnalyzerEnabled>false</ossindexAnalyzerEnabled>
                         </configuration>
                         <executions>
                             <execution>
