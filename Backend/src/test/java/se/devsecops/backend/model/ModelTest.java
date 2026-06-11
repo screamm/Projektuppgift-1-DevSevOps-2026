@@ -61,7 +61,7 @@ class ModelTest {
 
     @Test
     void loginResponseSupportsConstructorAndSetters() {
-        LoginResponse response = new LoginResponse(true, "Initial");
+        LoginResult response = new LoginResult(true, "Initial");
 
         assertTrue(response.isSuccess());
         assertEquals("Initial", response.getMessage());
@@ -81,6 +81,67 @@ class ModelTest {
             () -> assertEquals("Test User", user.getUsername()),
             () -> assertEquals("test@example.com", user.getEmail()),
             () -> assertEquals("secret", user.getPassword())
+        );
+    }
+
+    @Test
+    void getProfileResponseSupportsConstructorAndSetters() {
+        GetProfileResponse response =
+            new GetProfileResponse("Test User", "test@example.com");
+
+        assertEquals("Test User", response.getUsername());
+        assertEquals("test@example.com", response.getEmail());
+
+        response.setUsername("Updated User");
+        response.setEmail("updated@example.com");
+        response.setMessage("Updated");
+
+        assertAll(
+            () -> assertEquals("Updated User", response.getUsername()),
+            () -> assertEquals("updated@example.com", response.getEmail()),
+            () -> assertEquals("Updated", response.getMessage())
+        );
+    }
+
+    @Test
+    void updateProfileRequestSupportsConstructorAndSetters() {
+        UpdateProfileRequest request =
+            new UpdateProfileRequest("old@example.com", "Test User", "new@example.com");
+
+        assertAll(
+            () -> assertEquals("old@example.com", request.getCurrentEmail()),
+            () -> assertEquals("Test User", request.getUsername()),
+            () -> assertEquals("new@example.com", request.getEmail())
+        );
+
+        request.setCurrentEmail("current@example.com");
+        request.setUsername("Updated User");
+        request.setEmail("updated@example.com");
+
+        assertAll(
+            () -> assertEquals("current@example.com", request.getCurrentEmail()),
+            () -> assertEquals("Updated User", request.getUsername()),
+            () -> assertEquals("updated@example.com", request.getEmail())
+        );
+    }
+
+    @Test
+    void updateProfileResponseSupportsConstructorAndSetters() {
+        UpdateProfileResponse response =
+            new UpdateProfileResponse(true, "Profile updated", "test@example.com");
+
+        assertTrue(response.isSuccess());
+        assertEquals("Profile updated", response.getMessage());
+        assertEquals("test@example.com", response.getEmail());
+
+        response.setSuccess(false);
+        response.setMessage("Updated");
+        response.setEmail("updated@example.com");
+
+        assertAll(
+            () -> assertFalse(response.isSuccess()),
+            () -> assertEquals("Updated", response.getMessage()),
+            () -> assertEquals("updated@example.com", response.getEmail())
         );
     }
 }

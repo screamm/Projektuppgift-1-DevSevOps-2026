@@ -5,8 +5,16 @@ const bodylessResponseStatuses = new Set([204, 205, 304]);
 
 export async function forwardJsonRequest(request: Request, path: string) {
   try {
+    const targetUrl = new URL(path, backendUrl);
+    const requestUrl = new URL(request.url);
+
+    requestUrl.searchParams.forEach((value, key) => {
+      targetUrl.searchParams.set(key, value);
+    });
+
     const hasRequestBody = !bodylessRequestMethods.has(request.method);
-    const response = await fetch(new URL(path, backendUrl), {
+
+    const response = await fetch(targetUrl, {
       method: request.method,
       headers: hasRequestBody
         ? { "content-type": "application/json" }

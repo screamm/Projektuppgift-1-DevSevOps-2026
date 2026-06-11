@@ -6,7 +6,10 @@ type RouteContext = {
 
 export async function GET(request: Request, context: RouteContext) {
   const { email } = await context.params;
-  return forwardJsonRequest(request, `/api/users/${encodeURIComponent(email)}`);
+  return forwardJsonRequest(
+    request,
+    `/api/users/${encodeURIComponent(email)}/settings`,
+  );
 }
 
 export async function PATCH(request: Request, context: RouteContext) {

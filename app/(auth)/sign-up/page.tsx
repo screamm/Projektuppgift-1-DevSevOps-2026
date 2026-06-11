@@ -22,7 +22,7 @@ export default function SignUpPage() {
     const formData = new FormData(form);
 
     try {
-      const response = await fetch("/api/users", {
+      const response = await fetch("/api/auth/register", {
         method: "POST",
         headers: {
           "content-type": "application/json",

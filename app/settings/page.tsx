@@ -20,6 +20,12 @@ type Task = {
   completed: boolean;
 };
 
+type ErrorResponse = {
+  message?: string;
+};
+
+const USER_EMAIL_KEY = "todo-devsecops-user-email";
+
 const inputClass =
   "block w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-2.5 text-zinc-900 outline-none transition-colors focus:border-zinc-400 focus:bg-white focus:ring-2 focus:ring-zinc-900/10 dark:border-zinc-700 dark:bg-zinc-800/50 dark:text-zinc-50 dark:focus:border-zinc-500 dark:focus:bg-zinc-800";
 
@@ -33,7 +39,7 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const storedEmail = localStorage.getItem("userEmail") ?? "";
+    const storedEmail = sessionStorage.getItem(USER_EMAIL_KEY) ?? "";
 
     if (!storedEmail) {
       Promise.resolve().then(() => setLoading(false));
@@ -41,21 +47,30 @@ export default function SettingsPage() {
     }
 
     Promise.all([
-      fetch(`/api/users/${encodeURIComponent(storedEmail)}`).then((response) =>
-        response.json() as Promise<ProfileResponse>,
-      ),
-      fetch(`/api/users/${encodeURIComponent(storedEmail)}/tasks`).then(
-        (response) => response.json() as Promise<Task[]>,
-      ),
+      fetch(`/api/users/${encodeURIComponent(storedEmail)}`),
+      fetch(`/api/users/${encodeURIComponent(storedEmail)}/tasks`),
     ])
-      .then(([profile, loadedTasks]) => {
+      .then(async ([profileResponse, tasksResponse]) => {
+        const profile = (await profileResponse.json()) as ProfileResponse;
+        const tasksData: unknown = await tasksResponse.json();
+
         setEmail(storedEmail);
-        if (profile.success && profile.username) {
+        if (profileResponse.ok && profile.success && profile.username) {
           setUsername(profile.username);
         } else {
           setProfileMessage(profile);
         }
-        setTasks(loadedTasks);
+
+        if (tasksResponse.ok && isTaskArray(tasksData)) {
+          setTasks(tasksData);
+        } else {
+          const error = tasksData as ErrorResponse;
+          setTasks([]);
+          setTaskMessage({
+            success: false,
+            message: error.message ?? "Could not load tasks.",
+          });
+        }
       })
       .catch(() => {
         setProfileMessage({
@@ -122,9 +137,9 @@ export default function SettingsPage() {
         body: JSON.stringify(task),
       },
     );
-    const updatedTask = (await response.json()) as Task | null;
+    const updatedTask: unknown = await response.json();
 
-    if (!response.ok || !updatedTask) {
+    if (!response.ok || !isTask(updatedTask)) {
       setTaskMessage({ success: false, message: "Could not update task." });
       return;
     }
@@ -297,4 +312,22 @@ function StatusMessage({ response }: { response: ApiResponse | null }) {
       {response.message}
     </p>
   );
+}
+
+function isTask(value: unknown): value is Task {
+  if (typeof value !== "object" || value === null) {
+    return false;
+  }
+
+  const task = value as Record<string, unknown>;
+  return (
+    typeof task.id === "number" &&
+    typeof task.title === "string" &&
+    ["High", "Medium", "Low"].includes(String(task.priority)) &&
+    typeof task.completed === "boolean"
+  );
+}
+
+function isTaskArray(value: unknown): value is Task[] {
+  return Array.isArray(value) && value.every(isTask);
 }
