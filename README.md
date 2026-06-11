@@ -1,126 +1,363 @@
 # Todo DevSecOps
 
-Avancerad todo-app för projektuppgift i DevSecOps-kursen: kontinuerlig utveckling och automatiserad testning.
+A fullstack todo application built for a DevSecOps course project, focused on continuous development and automated testing.
 
-## Frontend och backend
+The app provides user accounts (registration and sign-in, with passwords hashed using BCrypt) and task management on a dashboard: list tasks, create new tasks, mark tasks as completed, and delete tasks with a confirmation step. A settings page at `/settings` lets a signed-in user update their username, change their password, and edit a personal task list that is seeded for each user at registration. The frontend never talks to the backend directly from the browser — all API calls go through Next.js route handlers (`app/api/*`) that proxy requests to the Spring Boot backend.
 
-Frontendens registrerings- och inloggningsformulär skickar anrop via Next.js
-Route Handlers till backend. Backendadressen är som standard
-`http://localhost:8080`.
+## Tech stack
 
-Sätt miljövariabeln `BACKEND_URL` innan frontend startas om backend körs på en
-annan adress:
+| Layer | Technology |
+|---|---|
+| Frontend | Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS 4 |
+| Backend | Java 17, Spring Boot 3.3 (REST API on port 8080) |
+| Data storage | In-memory with seed data (resets on restart) |
+| Unit tests | JUnit 5 via Spring Boot Test (Maven Surefire) |
+| API tests | Postman collection run with Newman |
+| E2E tests | Playwright (Chromium, desktop + mobile viewports) |
+| CI | GitHub Actions |
+| Security scanning | `npm audit`, OWASP Dependency-Check |
 
-```env
-BACKEND_URL=http://localhost:8080
-```
+## Requirements
 
-## Getting Started
+- JDK 17 or later
+- Node.js 20 or later (with npm)
 
-Installera beroenden och starta utvecklingsservern:
+Maven does **not** need to be installed — the project ships with the Maven Wrapper (`Backend/mvnw`).
+
+## Getting started
+
+### 1. Start the backend (port 8080)
 
 ```bash
-npm install
+./Backend/mvnw -f Backend/pom.xml spring-boot:run
+```
+
+or equivalently:
+
+```bash
+cd Backend && ./mvnw spring-boot:run
+```
+
+### 2. Start the frontend (port 3000)
+
+```bash
+npm ci
 npm run dev
 ```
 
-Öppna [http://localhost:3000](http://localhost:3000) i webbläsaren. Redigera startsidan i `app/page.tsx`.
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-Övriga skript:
+The frontend reaches the backend through the `BACKEND_URL` environment variable, which defaults to `http://localhost:8080`. Set it before starting the frontend if the backend runs elsewhere:
 
 ```bash
-npm run build   # produktionsbygge
-npm run start   # kör produktionsbygge
-npm run lint    # ESLint
+BACKEND_URL=http://localhost:8080 npm run dev
 ```
 
----
+### Production build
 
-# Projektuppgift-1-DevSevOps-2026
+```bash
+npm run build
+npm run start
+```
 
-Projektuppgift: DevSevOps kontinuerlig utveckling och automatiserad testning
+## Running tests
 
-Översikt
-Ni ska under kursern bygga en fullstack-webbapplikation med ett REST API och sätta upp en komplett CI/CD-pipeline i GitHub Actions. Applikationens tema och omfattning väljer ni själva, men den måste uppfylla de tekniska kraven nedan.
+| Test type | Command | Notes |
+|---|---|---|
+| Backend unit tests | `./Backend/mvnw -f Backend/pom.xml test` | No services need to be running |
+| Lint | `npm run lint` | ESLint |
+| API tests (Newman) | `npm run test:api` | Requires a running backend on port 8080. Collection lives in `tests/api/` |
+| E2E tests (Playwright) | `npm run test:e2e` | See prerequisites below |
 
-Applikationen ska lösa ett verkligt eller påhittat problem. En todo-app är godkänd, men en app med bara en resurs som heter “Item” med fältet “name” är inte tillräckligt. Er huvudresurs ska ha minst 3 fält/attribut utöver ID.
+### E2E prerequisites
 
-Om du arbetar själv och har en färdig fullstack app sedan tidigare - ok att återanvända, men skriv test- och devop-flöden under kursen!
-Om ni arbetar tillsammans i grupp – diskutera / planera / välj ut en fullstack app att skapa/vidare utveckla – och skriv test- och devop-flöden under kursen!
-Tekniska krav
-Backend (valfritt språk: Node.js, Python, C#, Java, Go, etc.)
-REST API med minst 2 endpoints (per deltagare) som implementerar:
-GET – hämta en eller flera resurser
-POST – skapa ny resurs
-PUT eller PATCH – uppdatera resurs
-DELETE – ta bort resurs
-Någon form av datalagring (databas, JSON-fil, eller in-memory med seed-data)
-Korrekt användning av HTTP-statuskoder (200, 201, 400, 404, etc.)
-Tips! Om du inte vill använda en “riktig databas”
-JSON-server är en npm-modul (npm install json-server) som tillåter GET/POST/PUT/DELETE requests mot en JSON-fil och automatiskt ger dig ett REST-api. Dokumentation här. Vi går igenom detta bibliotek vecka 6!
+The E2E suite runs against the **production build** of the frontend and the packaged backend jar. `playwright.config.ts` starts both servers automatically, but you must first:
 
-Frontend (vanilla JS/TS eller valfritt ramverk: React, Vue, Svelte, Angular)
-Ska konsumera API:et och visa data för användaren
-Användaren ska kunna utföra minst 3 av 4 CRUD-operationer via gränssnittet
-Grundläggande felhantering (visa meddelande om något går fel)
-Tester
-Vitest/Jest eller annat adekvat bibliotek – enhetstester för backend-logik
-Playwright/Cypress eller annat adekvat bibliotek – end-to-end-tester för frontend
-Postman/Newman eller annat adekvat bibliotek – API-tester
-GitHub Actions Pipeline
-Workflow som triggas på push och/eller pull_request
-Ska köra alla tester
-Ska passera (grön bock) vid inlämning
-Individuell rapport
-Du ska skriva och lämna in en rapport där du beskriver vad applikationen gör, vilken testning du implementerat, hur väl testningen täcker applikationens olika delar, och hur bra testbarheten i applikationen är (Kan allt testas? Om inte, varför ? Vad skulle behöva göras för att uppnå full testbarhet, om möjligt).
-Beskriv vidare vad som är implementerat i pipeline; steg, gates, logik och funktionalitet.
-Beskriv svårigheter och eventuella luckor/problem i pipeline.
-Avsluta med en reflektion om projektet, kursen, vad du lärt dig, och vad du skulle vilja lära dig mer inom området.
-Rapporten bedöms sammantaget med inlämningen jämte redovisning och observation i förhållande till kursens betygskriterier.
+```bash
+# 1. Build the backend jar
+./Backend/mvnw -f Backend/pom.xml -DskipTests package
 
-Betygskriterier
-Betygskriterierna är baserade på kursplanens lärandemål och bedömningsgrunder och är till för att skapa ett bra underlag för bedömning enligt dessa.
+# 2. Build the production frontend
+npm run build
 
-Godkänt (G)
-Kriterium	Skallkrav
-API	2 endpoints per deltagare (GET, POST, PUT/PATCH, DELETE) som fungerar
-Frontend	Visar data från API, minst 3 av 4 CRUD-operationer fungerar
-Tester	Minst 3 tester per testtyp och deltagare, som passerar och testar reell funktionalitet
-Pipeline	GitHub Actions workflow som kör tester och passerar
-Branch protection	Main-branch är skyddad – kräver att workflow passerar före merge
-Dokumentation	README med: hur man startar projektet, kort beskrivning av applikationen
-Kod	Går att klona och köra lokalt med dokumenterade instruktioner
-Väl Godkänt (VG)
-Uppfyller alla krav för G, plus minst 4 av följande:
+# 3. Install the Playwright browser (first time only)
+npx playwright install chromium
 
-Kriterium	Skallkrav
-Testbredd	Minst 6 tester per testtyp och deltagare
-Kodkvalitet	Automatisk kodstilskontroll (t.ex. ESLint, Pylint) som körs i pipeline
-Säkerhet	Pipeline kontrollerar att inga dependencies har kända säkerhetsvarningar (t.ex. npm audit, pip-audit)
-Produktionsbygge	Om ramverket har produktionsläge: testerna körs mot produktionsversionen, inte utvecklingsversionen
-API-design	Validering av input (t.ex. “namn får inte vara tomt”), tydliga felmeddelanden till användaren
-Frontend UX	Minst 2 av: Fungerar på dator och mobil, bekräftelse innan radering, felmeddelanden visas för användaren
-Branch protection	Kräver godkänd code review från annan person utöver att tester passerar
-Dokumentation	Instruktioner för hur API:et används (vilka endpoints finns, vad skickar man in, vad får man tillbaka)
-Inlämning
-Checklista
-Repo är publikt eller lärare är inbjuden som collaborator
-README innehåller startinstruktioner
-GitHub Actions workflow syns och passerar
-Alla endpoints kan testas (bifoga Postman-collection eller curl-exempel)
-Redovisning
-Var beredd att:
+# 4. Run the tests
+npm run test:e2e
+```
 
-Förklara era arkitekturbeslut
-Visa att du förstår er kodbas
-Svara på frågor om pipeline-konfigurationen
-Exempelapplikationer (inspiration)
-För att ge er en känsla för lämplig omfattning:
+## API documentation
 
-Bokhantering för ett bibliotek
-Receptsamling med ingredienser
-Enkelt bokningssystem
-Produktkatalog med kategorier
-Quiz-applikation med frågor och resultat
-Notes-app
-Avancerad Todo-app
+Base URL: `http://localhost:8080` (the frontend proxies the same paths under `http://localhost:3000/api/*`).
+
+### Task model
+
+| Field | Type | Notes |
+|---|---|---|
+| `id` | number | Assigned by the server |
+| `title` | string | Required, non-empty, max 100 characters |
+| `priority` | string | Required, one of `LOW`, `MEDIUM`, `HIGH` |
+| `dueDate` | string or null | Optional, format `YYYY-MM-DD` |
+| `completed` | boolean | Defaults to `false` |
+
+Seed data (loaded at startup):
+
+| Title | Priority | Due date |
+|---|---|---|
+| Plan the next sprint | HIGH | 2026-06-15 |
+| Review security checklist | MEDIUM | 2026-06-18 |
+| Update project documentation | LOW | — |
+
+### GET /api/tasks
+
+| | |
+|---|---|
+| Method | `GET` |
+| Path | `/api/tasks` |
+| Request body | — |
+| Response | `200 OK` — array of Task objects |
+
+```bash
+curl http://localhost:8080/api/tasks
+```
+
+### GET /api/tasks/{id}
+
+| | |
+|---|---|
+| Method | `GET` |
+| Path | `/api/tasks/{id}` |
+| Request body | — |
+| Response | `200 OK` — Task object |
+| Errors | `404 Not Found` — `{"message": "..."}` |
+
+```bash
+curl http://localhost:8080/api/tasks/1
+```
+
+### POST /api/tasks
+
+| | |
+|---|---|
+| Method | `POST` |
+| Path | `/api/tasks` |
+| Request body | `{"title": string, "priority": "LOW"\|"MEDIUM"\|"HIGH", "dueDate"?: "YYYY-MM-DD", "completed"?: boolean}` |
+| Response | `201 Created` — the created Task |
+| Errors | `400 Bad Request` — `{"message": "...", "errors": {...}}` on validation failure |
+
+`title` is required (non-empty, max 100 characters) and `priority` is required.
+
+```bash
+curl -X POST http://localhost:8080/api/tasks \
+  -H "Content-Type: application/json" \
+  -d '{"title": "Write project report", "priority": "HIGH", "dueDate": "2026-06-20"}'
+```
+
+### PUT /api/tasks/{id}
+
+| | |
+|---|---|
+| Method | `PUT` |
+| Path | `/api/tasks/{id}` |
+| Request body | `{"title": string, "priority": "LOW"\|"MEDIUM"\|"HIGH", "dueDate"?: "YYYY-MM-DD", "completed": boolean}` |
+| Response | `200 OK` — the updated Task |
+| Errors | `400 Bad Request` — validation failure; `404 Not Found` — unknown id |
+
+```bash
+curl -X PUT http://localhost:8080/api/tasks/1 \
+  -H "Content-Type: application/json" \
+  -d '{"title": "Plan the next sprint", "priority": "HIGH", "dueDate": "2026-06-15", "completed": true}'
+```
+
+### DELETE /api/tasks/{id}
+
+| | |
+|---|---|
+| Method | `DELETE` |
+| Path | `/api/tasks/{id}` |
+| Request body | — |
+| Response | `204 No Content` |
+| Errors | `404 Not Found` — unknown id |
+
+```bash
+curl -i -X DELETE http://localhost:8080/api/tasks/1
+```
+
+### POST /api/users
+
+Registers a new user, stores the password as a BCrypt hash, and seeds the user's personal task list (see [User profile & per-user tasks](#user-profile--per-user-tasks)). Returns `200` in both cases; `exists` indicates whether the email was already registered.
+
+| | |
+|---|---|
+| Method | `POST` |
+| Path | `/api/users` |
+| Request body | `{"username": string, "email": string, "password": string}` |
+| Response | `200 OK` — `{"exists": boolean, "message": string}` |
+
+```bash
+curl -X POST http://localhost:8080/api/users \
+  -H "Content-Type: application/json" \
+  -d '{"username": "david", "email": "david@example.com", "password": "secret123"}'
+```
+
+### POST /api/auth/login
+
+Validates credentials. Returns `200` in both cases; `success` indicates whether the login succeeded.
+
+| | |
+|---|---|
+| Method | `POST` |
+| Path | `/api/auth/login` |
+| Request body | `{"email": string, "password": string}` |
+| Response | `200 OK` — `{"success": boolean, "message": string}` |
+
+```bash
+curl -X POST http://localhost:8080/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email": "david@example.com", "password": "secret123"}'
+```
+
+### User profile & per-user tasks
+
+These endpoints back the settings page (`/settings`). Unlike `/api/tasks`, which uses semantic status codes, they always respond `200 OK` and signal the outcome with a `success` flag in the response body (same convention as `POST /api/users` and `POST /api/auth/login` above).
+
+Each user gets their own task list, seeded at registration. The per-user task model differs from the shared Task model above:
+
+| Field | Type | Notes |
+|---|---|---|
+| `id` | number | Assigned by the server |
+| `title` | string | Required, non-empty |
+| `priority` | string | One of `High`, `Medium`, `Low` — any other value is normalized to `Medium` |
+| `completed` | boolean | |
+
+Per-user seed data (created for each user by `POST /api/users`):
+
+| Title | Priority |
+|---|---|
+| Plan the next sprint | High |
+| Review security checklist | Medium |
+| Update project documentation | Low |
+
+#### GET /api/users/{email}
+
+Returns the user's profile.
+
+| | |
+|---|---|
+| Method | `GET` |
+| Path | `/api/users/{email}` |
+| Request body | — |
+| Response | `200 OK` — `{"success": boolean, "message": string, "username": string\|null, "email": string\|null}` |
+
+`success` is `false` (with `username` and `email` as `null`) when the email is not registered.
+
+```bash
+curl http://localhost:8080/api/users/david@example.com
+```
+
+#### PATCH /api/users/{email}
+
+Updates the user's username.
+
+| | |
+|---|---|
+| Method | `PATCH` |
+| Path | `/api/users/{email}` |
+| Request body | `{"username": string}` |
+| Response | `200 OK` — `{"success": boolean, "message": string, "username": string\|null, "email": string\|null}` |
+
+`success` is `false` when the email is not registered or `username` is missing/empty.
+
+```bash
+curl -X PATCH http://localhost:8080/api/users/david@example.com \
+  -H "Content-Type: application/json" \
+  -d '{"username": "david_r"}'
+```
+
+#### PATCH /api/users/{email}/password
+
+Changes the user's password. The new password is stored as a BCrypt hash.
+
+| | |
+|---|---|
+| Method | `PATCH` |
+| Path | `/api/users/{email}/password` |
+| Request body | `{"currentPassword": string, "newPassword": string}` |
+| Response | `200 OK` — `{"success": boolean, "message": string}` |
+
+`success` is `false` when the email is not registered, `currentPassword` is incorrect, or `newPassword` is shorter than 8 characters.
+
+```bash
+curl -X PATCH http://localhost:8080/api/users/david@example.com/password \
+  -H "Content-Type: application/json" \
+  -d '{"currentPassword": "secret123", "newPassword": "longersecret456"}'
+```
+
+#### GET /api/users/{email}/tasks
+
+| | |
+|---|---|
+| Method | `GET` |
+| Path | `/api/users/{email}/tasks` |
+| Request body | — |
+| Response | `200 OK` — array of per-user Task objects (empty array for unknown emails) |
+
+```bash
+curl http://localhost:8080/api/users/david@example.com/tasks
+```
+
+#### PUT /api/users/{email}/tasks/{taskId}
+
+| | |
+|---|---|
+| Method | `PUT` |
+| Path | `/api/users/{email}/tasks/{taskId}` |
+| Request body | `{"title": string, "priority": "High"\|"Medium"\|"Low", "completed": boolean}` |
+| Response | `200 OK` — the updated per-user Task, or an empty body when the email or task id is unknown or `title` is missing/empty |
+
+```bash
+curl -X PUT http://localhost:8080/api/users/david@example.com/tasks/1 \
+  -H "Content-Type: application/json" \
+  -d '{"title": "Plan the next sprint", "priority": "High", "completed": true}'
+```
+
+## CI pipelines
+
+Two GitHub Actions workflows live in [`.github/workflows/`](.github/workflows/).
+
+### CI (`backendWorkflow.yml`)
+
+The main pipeline with five jobs. It triggers on pushes to `main` and `dev`, on pull requests targeting `main` or `dev`, and manually via `workflow_dispatch` (feature branches are covered by their pull requests, avoiding duplicate runs).
+
+| Job | What it does |
+|---|---|
+| `backend-tests` | Builds and unit-tests the backend with `./mvnw clean verify` (Java 17), verifies the build does not modify tracked files, and uploads the jar as an artifact |
+| `frontend-checks` | `npm ci`, ESLint, a TypeScript check (`npx tsc --noEmit`), `npm audit --omit=dev --audit-level=high` (blocking gate on high/critical advisories; two known moderate advisories via `next`/`postcss` are documented in the workflow), and a production build |
+| `api-tests` | Downloads the backend jar, starts it, waits for `/api/tasks` to respond, then runs the Newman collection (`npm run test:api`). Depends on `backend-tests` |
+| `e2e-tests` | Downloads and starts the backend jar, builds the production frontend, and runs Playwright (Chromium) against it (`npm run test:e2e`). Uploads the Playwright report on failure. Depends on `backend-tests` |
+| `dependency-check` | OWASP Dependency-Check on the backend dependencies, with SARIF upload to GitHub Code Scanning and an HTML report artifact. Currently non-blocking (`continue-on-error: true`) until the `NVD_API_KEY` repository secret is configured, since NVD downloads are slow and unstable without an API key |
+
+### Frontend CI (`frontendWorkflow.yml`)
+
+A lighter, path-filtered workflow that gives fast feedback on frontend-only changes. It triggers on pushes to `main`, `dev`, `frontend/**` and `feature/**` branches, on pull requests targeting `main` or `dev` (in both cases only when frontend files such as `app/**`, `lib/**` or the frontend configs change), and manually via `workflow_dispatch`. A single `test` job runs `npm ci`, ESLint, a TypeScript check (`npx tsc --noEmit`), and a production build on Node 20.
+
+## Project structure
+
+```
+.
+├── app/                     # Next.js frontend (App Router)
+│   ├── (auth)/              # Sign-in and sign-up pages
+│   ├── api/                 # Route handlers proxying the backend API
+│   ├── dashboard/           # Task dashboard (list, create, complete, delete)
+│   └── settings/            # Settings page (profile, password change, per-user tasks)
+├── Backend/                 # Spring Boot REST API (port 8080)
+│   ├── src/main/java/       # Controllers, services, models
+│   └── src/test/java/       # Unit tests
+├── lib/                     # Shared frontend utilities (backend proxy helper)
+├── tests/
+│   ├── api/                 # Postman/Newman collection
+│   └── e2e/                 # Playwright E2E tests
+├── .github/workflows/       # CI pipelines (backendWorkflow.yml, frontendWorkflow.yml)
+└── playwright.config.ts     # E2E config — starts backend jar + production frontend
+```
