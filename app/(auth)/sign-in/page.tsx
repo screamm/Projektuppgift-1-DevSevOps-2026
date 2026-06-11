@@ -41,6 +41,7 @@ export default function SignInPage() {
       setMessage(data.message);
 
       if (!failed) {
+        localStorage.setItem("userEmail", String(formData.get("email")).toLowerCase());
         router.replace("/dashboard");
       }
     } catch {
