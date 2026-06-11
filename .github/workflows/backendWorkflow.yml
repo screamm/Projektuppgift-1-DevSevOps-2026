@@ -10,7 +10,6 @@ on:
     paths:
       - "Backend/**"
       - ".github/workflows/backend-ci.yml"
-
   pull_request:
     branches:
       - main
@@ -18,21 +17,23 @@ on:
     paths:
       - "Backend/**"
       - ".github/workflows/backend-ci.yml"
-
   workflow_dispatch:
 
 permissions:
   contents: read
+  security-events: write
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build:
     name: Build Java Backend
     runs-on: ubuntu-latest
-
     defaults:
       run:
         working-directory: Backend
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -47,6 +48,28 @@ jobs:
 
       - name: Build and test with Maven
         run: mvn -B clean verify
+
+      - name: Fail if build changed tracked files
+        run: |
+          if ! git diff --quiet; then
+            echo "ERROR: build modified tracked files."
+            git diff --name-only
+            exit 1
+          fi
+
+      - name: Upload OWASP SARIF to Code Scanning
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: Backend/target/dependency-check-report.sarif
+          category: owasp-dependency-check
+
+      - name: Upload OWASP HTML report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: owasp-dependency-check-report
+          path: Backend/target/dependency-check-report.html
 
       - name: Upload backend jar
         uses: actions/upload-artifact@v4
