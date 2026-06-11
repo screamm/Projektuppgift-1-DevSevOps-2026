@@ -47,7 +47,7 @@ jobs:
           cache-dependency-path: Backend/pom.xml
 
       - name: Build and test with Maven
-        run: mvn -B clean verify
+        run: mvn -B clean verify -DnvdApiKey=${{ secrets.NVD_API_KEY }}
 
       - name: Fail if build changed tracked files
         run: |
