@@ -18,7 +18,7 @@ The API is then available at `http://localhost:8080`.
 ./mvnw test
 ```
 
-Runs the 37 JUnit unit tests: 22 in the `tasks` package (shared task API) and 15 covering users, auth, profile and per-user tasks.
+Runs the 63 JUnit unit tests: 22 in the `tasks` package (shared task API) and 41 covering users, auth, profile, dashboard, health and per-user tasks.
 
 ## Package (jar)
 

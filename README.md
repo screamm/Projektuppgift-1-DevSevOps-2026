@@ -9,7 +9,7 @@ The app provides user accounts (registration and sign-in, with passwords hashed 
 | Layer | Technology |
 |---|---|
 | Frontend | Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS 4 |
-| Backend | Java 17, Spring Boot 3.3 (REST API on port 8080) |
+| Backend | Java 17, Spring Boot 3.5 (REST API on port 8080) |
 | Data storage | In-memory with seed data (resets on restart) |
 | Unit tests | JUnit 5 via Spring Boot Test (Maven Surefire) |
 | API tests | Postman collection run with Newman |
@@ -186,14 +186,15 @@ curl -i -X DELETE http://localhost:8080/api/tasks/1
 
 ### POST /api/users
 
-Registers a new user, stores the password as a BCrypt hash, and seeds the user's personal task list (see [User profile & per-user tasks](#user-profile--per-user-tasks)). Returns `200` in both cases; `exists` indicates whether the email was already registered.
+Registers a new user, stores the password as a BCrypt hash, and seeds the user's personal task list (see [User profile & per-user tasks](#user-profile--per-user-tasks)). Returns `201 Created` on success, `409 Conflict` when the email is already registered (`exists` is `true`), and `400 Bad Request` on validation failure (missing username, missing or invalid email, or a password shorter than 8 characters).
 
 | | |
 |---|---|
 | Method | `POST` |
 | Path | `/api/users` |
 | Request body | `{"username": string, "email": string, "password": string}` |
-| Response | `200 OK` — `{"exists": boolean, "message": string}` |
+| Response | `201 Created` — `{"exists": false, "message": "User created"}` |
+| Errors | `409 Conflict` — email already registered; `400 Bad Request` — validation failure (both with the same `{"exists": boolean, "message": string}` body) |
 
 ```bash
 curl -X POST http://localhost:8080/api/users \
@@ -203,14 +204,15 @@ curl -X POST http://localhost:8080/api/users \
 
 ### POST /api/auth/login
 
-Validates credentials. Returns `200` in both cases; `success` indicates whether the login succeeded.
+Validates credentials. Returns `200 OK` when the login succeeds, `401 Unauthorized` when the email or password is wrong, and `400 Bad Request` when the email is missing or malformed.
 
 | | |
 |---|---|
 | Method | `POST` |
 | Path | `/api/auth/login` |
 | Request body | `{"email": string, "password": string}` |
-| Response | `200 OK` — `{"success": boolean, "message": string}` |
+| Response | `200 OK` — `{"success": true, "message": "Login successful", "email": string}` |
+| Errors | `401 Unauthorized` — wrong email or password; `400 Bad Request` — missing or malformed email (both with `{"success": false, "message": string, "email": null}`) |
 
 ```bash
 curl -X POST http://localhost:8080/api/auth/login \
@@ -220,7 +222,7 @@ curl -X POST http://localhost:8080/api/auth/login \
 
 ### User profile & per-user tasks
 
-These endpoints back the settings page (`/settings`). Unlike `/api/tasks`, which uses semantic status codes, they always respond `200 OK` and signal the outcome with a `success` flag in the response body (same convention as `POST /api/users` and `POST /api/auth/login` above).
+These endpoints back the settings page (`/settings`). Unlike `/api/tasks`, `/api/users` and `/api/auth/login`, which use semantic status codes, they always respond `200 OK` and signal the outcome with a `success` flag in the response body.
 
 Each user gets their own task list, seeded at registration. The per-user task model differs from the shared Task model above:
 
@@ -239,21 +241,21 @@ Per-user seed data (created for each user by `POST /api/users`):
 | Review security checklist | Medium |
 | Update project documentation | Low |
 
-#### GET /api/users/{email}
+#### GET /api/users/{email}/settings
 
-Returns the user's profile.
+Returns the user's profile. The frontend's `GET /api/users/{email}` route proxies to this endpoint.
 
 | | |
 |---|---|
 | Method | `GET` |
-| Path | `/api/users/{email}` |
+| Path | `/api/users/{email}/settings` |
 | Request body | — |
 | Response | `200 OK` — `{"success": boolean, "message": string, "username": string\|null, "email": string\|null}` |
 
 `success` is `false` (with `username` and `email` as `null`) when the email is not registered.
 
 ```bash
-curl http://localhost:8080/api/users/david@example.com
+curl http://localhost:8080/api/users/david@example.com/settings
 ```
 
 #### PATCH /api/users/{email}
@@ -335,7 +337,7 @@ The main pipeline with five jobs. It triggers on pushes to `main` and `dev`, on 
 | `backend-tests` | Builds and unit-tests the backend with `./mvnw clean verify` (Java 17), verifies the build does not modify tracked files, and uploads the jar as an artifact |
 | `frontend-checks` | `npm ci`, ESLint, a TypeScript check (`npx tsc --noEmit`), `npm audit --omit=dev --audit-level=high` (blocking gate on high/critical advisories; two known moderate advisories via `next`/`postcss` are documented in the workflow), and a production build |
 | `api-tests` | Downloads the backend jar, starts it, waits for `/api/tasks` to respond, then runs the Newman collection (`npm run test:api`). Depends on `backend-tests` |
-| `e2e-tests` | Downloads and starts the backend jar, builds the production frontend, and runs Playwright (Chromium) against it (`npm run test:e2e`). Uploads the Playwright report on failure. Depends on `backend-tests` |
+| `e2e-tests` | Downloads the backend jar, builds the production frontend, and runs Playwright (Chromium) via `npm run test:e2e` — `playwright.config.ts` starts both the backend jar and the frontend server. Uploads the Playwright report on failure. Depends on `backend-tests` |
 | `dependency-check` | OWASP Dependency-Check on the backend dependencies, with SARIF upload to GitHub Code Scanning and an HTML report artifact. Blocking gate (`failBuildOnCVSS: 7`) using the `NVD_API_KEY` repository secret; the OSS Index analyzer is disabled since anonymous access now returns 401 |
 
 ### Frontend CI (`frontendWorkflow.yml`)
