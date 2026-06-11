@@ -15,11 +15,19 @@ import se.devsecops.backend.model.GetProfileResponse;
 import se.devsecops.backend.model.ListUsersResponse;
 import se.devsecops.backend.model.LoginRequest;
 import se.devsecops.backend.model.LoginResponse;
+<<<<<<< HEAD
 import se.devsecops.backend.model.UpdatePasswordRequest;
 import se.devsecops.backend.model.UpdatePasswordResponse;
 import se.devsecops.backend.model.UpdateProfileRequest;
 import se.devsecops.backend.model.UpdateProfileResponse;
 import se.devsecops.backend.model.UserResponse;
+=======
+import se.devsecops.backend.model.ChangePasswordRequest;
+import se.devsecops.backend.model.ProfileResponse;
+import se.devsecops.backend.model.Task;
+import se.devsecops.backend.model.UpdateProfileRequest;
+import se.devsecops.backend.model.UpdateTaskRequest;
+>>>>>>> ee89d5791ff178cc678277138af071e0a049a893
 
 class UserServiceTest {
 
@@ -93,6 +101,7 @@ class UserServiceTest {
     }
 
     @Test
+<<<<<<< HEAD
     void loginReturnsEmailOnSuccess() {
         userService.createUser(
             new CreateUserRequest("Test User", "test@example.com", "password1")
@@ -303,5 +312,43 @@ class UserServiceTest {
         assertEquals("active", response.getAccountStatus());
         assertEquals(1, response.getUserCount());
         assertEquals(3, response.getTasksToday());
+=======
+    void profileAndPasswordCanBeUpdated() {
+        userService.createUser(
+            new CreateUserRequest("Test User", "test@example.com", "old-password")
+        );
+
+        ProfileResponse profile = userService.updateProfile(
+            "TEST@EXAMPLE.COM",
+            new UpdateProfileRequest("Updated User")
+        );
+        assertTrue(profile.isSuccess());
+        assertEquals("Updated User", profile.getUsername());
+
+        assertTrue(userService.changePassword(
+            "test@example.com",
+            new ChangePasswordRequest("old-password", "new-password")
+        ).isSuccess());
+        assertTrue(userService.login(
+            new LoginRequest("test@example.com", "new-password")
+        ).isSuccess());
+    }
+
+    @Test
+    void taskCanBeUpdated() {
+        userService.createUser(
+            new CreateUserRequest("Test User", "test@example.com", "secret")
+        );
+
+        Task task = userService.updateTask(
+            "test@example.com",
+            1,
+            new UpdateTaskRequest("Ship settings page", "High", true)
+        );
+
+        assertEquals("Ship settings page", task.getTitle());
+        assertEquals("High", task.getPriority());
+        assertTrue(task.isCompleted());
+>>>>>>> ee89d5791ff178cc678277138af071e0a049a893
     }
 }

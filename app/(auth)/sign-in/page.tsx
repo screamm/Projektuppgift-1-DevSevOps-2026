@@ -44,9 +44,13 @@ export default function SignInPage() {
       setMessage(data.message);
 
       if (!failed) {
+<<<<<<< HEAD
         const userEmail =
           data.email ?? String(formData.get("email") ?? "").toLowerCase();
         sessionStorage.setItem(USER_EMAIL_KEY, userEmail);
+=======
+        localStorage.setItem("userEmail", String(formData.get("email")).toLowerCase());
+>>>>>>> ee89d5791ff178cc678277138af071e0a049a893
         router.replace("/dashboard");
       }
     } catch {

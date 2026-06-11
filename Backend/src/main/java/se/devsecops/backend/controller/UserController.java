@@ -1,9 +1,14 @@
 package se.devsecops.backend.controller;
 
+<<<<<<< HEAD
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+=======
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+>>>>>>> ee89d5791ff178cc678277138af071e0a049a893
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -11,8 +16,11 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import se.devsecops.backend.model.ApiResponse;
+import se.devsecops.backend.model.ChangePasswordRequest;
 import se.devsecops.backend.model.CreateUserRequest;
 import se.devsecops.backend.model.CreateUserResponse;
+<<<<<<< HEAD
 import se.devsecops.backend.model.DeleteUserResponse;
 import se.devsecops.backend.model.ListUsersResponse;
 import se.devsecops.backend.model.UpdatePasswordRequest;
@@ -20,6 +28,10 @@ import se.devsecops.backend.model.UpdatePasswordResponse;
 import java.util.Map;
 
 import se.devsecops.backend.model.UserResponse;
+=======
+import se.devsecops.backend.model.ProfileResponse;
+import se.devsecops.backend.model.UpdateProfileRequest;
+>>>>>>> ee89d5791ff178cc678277138af071e0a049a893
 import se.devsecops.backend.service.UserService;
 
 @RestController
@@ -47,6 +59,7 @@ public class UserController {
         return ResponseEntity.badRequest().body(response);
     }
 
+<<<<<<< HEAD
     @GetMapping
     public ResponseEntity<ListUsersResponse> listUsers() {
         return ResponseEntity.ok(userService.listUsers());
@@ -101,5 +114,26 @@ public class UserController {
         }
 
         return ResponseEntity.badRequest().body(response);
+=======
+    @GetMapping("/api/users/{email}")
+    public ProfileResponse getProfile(@PathVariable String email) {
+        return userService.getProfile(email);
+    }
+
+    @PatchMapping("/api/users/{email}")
+    public ProfileResponse updateProfile(
+        @PathVariable String email,
+        @RequestBody UpdateProfileRequest request
+    ) {
+        return userService.updateProfile(email, request);
+    }
+
+    @PatchMapping("/api/users/{email}/password")
+    public ApiResponse changePassword(
+        @PathVariable String email,
+        @RequestBody ChangePasswordRequest request
+    ) {
+        return userService.changePassword(email, request);
+>>>>>>> ee89d5791ff178cc678277138af071e0a049a893
     }
 }
