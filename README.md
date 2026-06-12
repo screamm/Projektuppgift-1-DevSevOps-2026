@@ -220,9 +220,27 @@ curl -X POST http://localhost:8080/api/auth/login \
   -d '{"email": "david@example.com", "password": "secret123"}'
 ```
 
+### POST /api/auth/register
+
+Alternative registration endpoint with the same contract as `POST /api/users` (both delegate to the same user service).
+
+| | |
+|---|---|
+| Method | `POST` |
+| Path | `/api/auth/register` |
+| Request body | `{"username": string, "email": string, "password": string}` |
+| Response | `201 Created` — `{"exists": false, "message": "User created"}` |
+| Errors | `409 Conflict` — email already registered; `400 Bad Request` — validation failure |
+
+```bash
+curl -X POST http://localhost:8080/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"username": "david", "email": "david2@example.com", "password": "secret123"}'
+```
+
 ### User profile & per-user tasks
 
-These endpoints back the settings page (`/settings`). Unlike `/api/tasks`, `/api/users` and `/api/auth/login`, which use semantic status codes, they always respond `200 OK` and signal the outcome with a `success` flag in the response body.
+These endpoints back the settings page (`/settings`). They use semantic status codes (`404 Not Found` for unknown emails or task ids, `400 Bad Request` for validation failures) and additionally include a `success` flag in profile/password response bodies.
 
 Each user gets their own task list, seeded at registration. The per-user task model differs from the shared Task model above:
 
@@ -250,9 +268,8 @@ Returns the user's profile. The frontend's `GET /api/users/{email}` route proxie
 | Method | `GET` |
 | Path | `/api/users/{email}/settings` |
 | Request body | — |
-| Response | `200 OK` — `{"success": boolean, "message": string, "username": string\|null, "email": string\|null}` |
-
-`success` is `false` (with `username` and `email` as `null`) when the email is not registered.
+| Response | `200 OK` — `{"success": true, "message": "Profile loaded", "username": string, "email": string}` |
+| Errors | `404 Not Found` — unknown email; `400 Bad Request` — missing or malformed email (both with `{"success": false, "message": string, "username": null, "email": null}`) |
 
 ```bash
 curl http://localhost:8080/api/users/david@example.com/settings
@@ -267,9 +284,8 @@ Updates the user's username.
 | Method | `PATCH` |
 | Path | `/api/users/{email}` |
 | Request body | `{"username": string}` |
-| Response | `200 OK` — `{"success": boolean, "message": string, "username": string\|null, "email": string\|null}` |
-
-`success` is `false` when the email is not registered or `username` is missing/empty.
+| Response | `200 OK` — `{"success": true, "message": "Username updated", "username": string, "email": string}` |
+| Errors | `404 Not Found` — unknown email; `400 Bad Request` — `username` missing/empty (both with `success: false` and a `message`) |
 
 ```bash
 curl -X PATCH http://localhost:8080/api/users/david@example.com \
@@ -286,9 +302,8 @@ Changes the user's password. The new password is stored as a BCrypt hash.
 | Method | `PATCH` |
 | Path | `/api/users/{email}/password` |
 | Request body | `{"currentPassword": string, "newPassword": string}` |
-| Response | `200 OK` — `{"success": boolean, "message": string}` |
-
-`success` is `false` when the email is not registered, `currentPassword` is incorrect, or `newPassword` is shorter than 8 characters.
+| Response | `200 OK` — `{"success": true, "message": "Password updated"}` |
+| Errors | `404 Not Found` — unknown email; `400 Bad Request` — `currentPassword` incorrect or missing, or `newPassword` shorter than 8 characters (both with `success: false` and a `message`) |
 
 ```bash
 curl -X PATCH http://localhost:8080/api/users/david@example.com/password \
@@ -303,7 +318,8 @@ curl -X PATCH http://localhost:8080/api/users/david@example.com/password \
 | Method | `GET` |
 | Path | `/api/users/{email}/tasks` |
 | Request body | — |
-| Response | `200 OK` — array of per-user Task objects (empty array for unknown emails) |
+| Response | `200 OK` — array of per-user Task objects |
+| Errors | `404 Not Found` — unknown email; `400 Bad Request` — missing or malformed email (both with `{"message": string}`) |
 
 ```bash
 curl http://localhost:8080/api/users/david@example.com/tasks
@@ -316,12 +332,139 @@ curl http://localhost:8080/api/users/david@example.com/tasks
 | Method | `PUT` |
 | Path | `/api/users/{email}/tasks/{taskId}` |
 | Request body | `{"title": string, "priority": "High"\|"Medium"\|"Low", "completed": boolean}` |
-| Response | `200 OK` — the updated per-user Task, or an empty body when the email or task id is unknown or `title` is missing/empty |
+| Response | `200 OK` — the updated per-user Task |
+| Errors | `404 Not Found` — unknown email or task id; `400 Bad Request` — `title` missing/empty or malformed email (both with `{"message": string}`) |
 
 ```bash
 curl -X PUT http://localhost:8080/api/users/david@example.com/tasks/1 \
   -H "Content-Type: application/json" \
   -d '{"title": "Plan the next sprint", "priority": "High", "completed": true}'
+```
+
+### User administration
+
+#### GET /api/users
+
+| | |
+|---|---|
+| Method | `GET` |
+| Path | `/api/users` |
+| Request body | — |
+| Response | `200 OK` — `{"users": [{"username": string, "email": string}, ...]}` |
+
+```bash
+curl http://localhost:8080/api/users
+```
+
+#### GET /api/users/{email}
+
+| | |
+|---|---|
+| Method | `GET` |
+| Path | `/api/users/{email}` |
+| Request body | — |
+| Response | `200 OK` — `{"username": string, "email": string}` |
+| Errors | `404 Not Found` — unknown email; `400 Bad Request` — missing or malformed email (both with `{"message": string}`) |
+
+```bash
+curl http://localhost:8080/api/users/david@example.com
+```
+
+#### DELETE /api/users/{email}
+
+Deletes the user and their personal task list.
+
+| | |
+|---|---|
+| Method | `DELETE` |
+| Path | `/api/users/{email}` |
+| Request body | — |
+| Response | `200 OK` — `{"success": true, "message": "User deleted"}` |
+| Errors | `404 Not Found` — unknown email; `400 Bad Request` — missing or malformed email (both with `success: false` and a `message`) |
+
+```bash
+curl -X DELETE http://localhost:8080/api/users/david@example.com
+```
+
+#### PUT /api/users/{email}/password
+
+Alternative password-change endpoint with the same rules as `PATCH /api/users/{email}/password`.
+
+| | |
+|---|---|
+| Method | `PUT` |
+| Path | `/api/users/{email}/password` |
+| Request body | `{"currentPassword": string, "newPassword": string}` |
+| Response | `200 OK` — `{"success": true, "message": "Password updated"}` |
+| Errors | `404 Not Found` — unknown email; `400 Bad Request` — `currentPassword` incorrect or missing, or `newPassword` shorter than 8 characters |
+
+```bash
+curl -X PUT http://localhost:8080/api/users/david@example.com/password \
+  -H "Content-Type: application/json" \
+  -d '{"currentPassword": "secret123", "newPassword": "longersecret456"}'
+```
+
+### Profile
+
+#### GET /api/profile
+
+| | |
+|---|---|
+| Method | `GET` |
+| Path | `/api/profile?email={email}` |
+| Request body | — |
+| Response | `200 OK` — `{"username": string, "email": string, "message": null}` |
+| Errors | `404 Not Found` — unknown email; `400 Bad Request` — missing or malformed email (both with a `message`) |
+
+```bash
+curl "http://localhost:8080/api/profile?email=david@example.com"
+```
+
+#### PUT /api/profile
+
+Updates username and/or email for the user identified by `currentEmail`. The personal task list follows the user to the new email.
+
+| | |
+|---|---|
+| Method | `PUT` |
+| Path | `/api/profile` |
+| Request body | `{"currentEmail": string, "username": string, "email": string}` |
+| Response | `200 OK` — `{"success": true, "message": "Profile updated", "email": string}` |
+| Errors | `404 Not Found` — `currentEmail` not registered; `409 Conflict` — new email already in use; `400 Bad Request` — validation failure |
+
+```bash
+curl -X PUT http://localhost:8080/api/profile \
+  -H "Content-Type: application/json" \
+  -d '{"currentEmail": "david@example.com", "username": "david_r", "email": "david.r@example.com"}'
+```
+
+### Dashboard & health
+
+#### GET /api/dashboard/summary
+
+| | |
+|---|---|
+| Method | `GET` |
+| Path | `/api/dashboard/summary?email={email}` |
+| Request body | — |
+| Response | `200 OK` — `{"username": string, "email": string, "accountStatus": "active", "userCount": number, "tasksToday": number, "completed": number, "remaining": number}` |
+| Errors | `404 Not Found` — unknown email; `400 Bad Request` — missing or malformed email (both with a `message`) |
+
+```bash
+curl "http://localhost:8080/api/dashboard/summary?email=david@example.com"
+```
+
+#### GET /api/health
+
+| | |
+|---|---|
+| Method | `GET` |
+| Path | `/api/health` |
+| Request body | — |
+| Response | `200 OK` — `{"status": "ok", "message": "Backend is running"}` |
+
+```bash
+curl http://localhost:8080/api/health
 ```
 
 ## CI pipelines
