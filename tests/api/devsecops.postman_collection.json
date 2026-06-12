@@ -580,6 +580,559 @@
             }
           },
           "response": []
+        },
+        {
+          "name": "13 POST /api/auth/login - correct password succeeds",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Body message is \"Login successful\"', function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.message).to.eql('Login successful');",
+                  "});",
+                  "",
+                  "pm.test('Body echoes the user email', function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.email).to.eql(pm.collectionVariables.get('userEmail'));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"{{userEmail}}\",\n    \"password\": \"{{userPassword}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "14 GET /api/users/{email} - fetch created user",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Body username and email match the created user', function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.username).to.eql(pm.collectionVariables.get('userName'));",
+                  "    pm.expect(json.email).to.eql(pm.collectionVariables.get('userEmail'));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/{{userEmail}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "{{userEmail}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "15 GET /api/users/{email}/settings - settings profile loaded",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Body has success = true and the username', function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.success).to.eql(true);",
+                  "    pm.expect(json.username).to.eql(pm.collectionVariables.get('userName'));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/{{userEmail}}/settings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "{{userEmail}}",
+                "settings"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "16 PATCH /api/users/{email} - update username",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('updatedUserName', 'renamed' + Date.now());"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Body confirms the username update', function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.success).to.eql(true);",
+                  "    pm.expect(json.username).to.eql(pm.collectionVariables.get('updatedUserName'));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"username\": \"{{updatedUserName}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/users/{{userEmail}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "{{userEmail}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "17 PATCH /api/users/{email}/password - wrong current password rejected",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 400', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test('Body message is \"Current password is incorrect\"', function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.success).to.eql(false);",
+                  "    pm.expect(json.message).to.eql('Current password is incorrect');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"currentPassword\": \"DefinitelyWrongPassword123\",\n    \"newPassword\": \"BrandNewSecret123!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/users/{{userEmail}}/password",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "{{userEmail}}",
+                "password"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "18 GET /api/users/{email}/tasks - seeded user tasks",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('New user has 3 seeded tasks', function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json).to.be.an('array');",
+                  "    pm.expect(json.length).to.eql(3);",
+                  "});",
+                  "",
+                  "pm.test('Seeded tasks include \"Plan the next sprint\"', function () {",
+                  "    const json = pm.response.json();",
+                  "    const titles = json.map(function (t) { return t.title; });",
+                  "    pm.expect(titles).to.include('Plan the next sprint');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/{{userEmail}}/tasks",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "{{userEmail}}",
+                "tasks"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "19 PUT /api/users/{email}/tasks/1 - update user task",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Body echoes the updated task', function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.id).to.eql(1);",
+                  "    pm.expect(json.title).to.eql('Renamed via API test');",
+                  "    pm.expect(json.priority).to.eql('Low');",
+                  "    pm.expect(json.completed).to.eql(true);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"title\": \"Renamed via API test\",\n    \"priority\": \"Low\",\n    \"completed\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/users/{{userEmail}}/tasks/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "{{userEmail}}",
+                "tasks",
+                "1"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "20 PUT /api/users/{email}/tasks/2 - blank title rejected",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 400', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test('Body message is \"Title must not be empty\"', function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.message).to.eql('Title must not be empty');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"title\": \"   \",\n    \"priority\": \"High\",\n    \"completed\": false\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/users/{{userEmail}}/tasks/2",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "{{userEmail}}",
+                "tasks",
+                "2"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "21 PUT /api/users/{email}/tasks/999999 - missing task",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 404', function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});",
+                  "",
+                  "pm.test('Body message is \"Task not found\"', function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.message).to.eql('Task not found');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"title\": \"Ghost task\",\n    \"priority\": \"Medium\",\n    \"completed\": false\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/users/{{userEmail}}/tasks/999999",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "{{userEmail}}",
+                "tasks",
+                "999999"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "22 GET /api/users/{email}/tasks - missing user",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 404', function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});",
+                  "",
+                  "pm.test('Body message is \"User not found\"', function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.message).to.eql('User not found');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/missing{{$timestamp}}@example.com/tasks",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "missing{{$timestamp}}@example.com",
+                "tasks"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "23 GET /api/dashboard/summary - totals for created user",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Summary belongs to the created user', function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.email).to.eql(pm.collectionVariables.get('userEmail'));",
+                  "    // Fallback so the assertion also holds when request 16 is skipped in a partial run.",
+                  "    const expectedName = pm.collectionVariables.get('updatedUserName') || pm.collectionVariables.get('userName');",
+                  "    pm.expect(json.username).to.eql(expectedName);",
+                  "});",
+                  "",
+                  "pm.test('Totals reflect the 3 seeded tasks with 1 completed', function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.tasksToday).to.eql(3);",
+                  "    pm.expect(json.completed).to.eql(1);",
+                  "    pm.expect(json.remaining).to.eql(2);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/dashboard/summary?email={{userEmail}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "dashboard",
+                "summary"
+              ],
+              "query": [
+                {
+                  "key": "email",
+                  "value": "{{userEmail}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "24 DELETE /api/users/{email} - delete created user",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Body confirms the deletion', function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.success).to.eql(true);",
+                  "    pm.expect(json.message).to.eql('User deleted');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/{{userEmail}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "{{userEmail}}"
+              ]
+            }
+          },
+          "response": []
         }
       ]
     }
@@ -612,6 +1165,11 @@
     },
     {
       "key": "userPassword",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "updatedUserName",
       "value": "",
       "type": "string"
     }

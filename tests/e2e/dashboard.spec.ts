@@ -170,6 +170,27 @@ test.describe("Dashboard - tasks", () => {
     await deleteTaskViaUi(page, title);
   });
 
+  test("stänger delete-dialogen med Escape utan att radera tasken", async ({
+    page,
+  }) => {
+    const title = uniqueTitle();
+    await createTaskViaForm(page, title);
+
+    await taskItemByTitle(page, title)
+      .getByTestId("task-delete-button")
+      .click();
+
+    const dialog = page.getByRole("dialog");
+    await expect(dialog).toBeVisible();
+
+    await page.keyboard.press("Escape");
+
+    await expect(dialog).toBeHidden();
+    await expect(taskItemByTitle(page, title)).toBeVisible();
+
+    await deleteTaskViaUi(page, title);
+  });
+
   test("visar backend-valideringsfel när titeln endast är mellanslag", async ({
     page,
   }) => {
