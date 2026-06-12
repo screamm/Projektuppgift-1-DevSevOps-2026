@@ -266,11 +266,12 @@ public class UserService {
             return null;
         }
 
+        // Titeln valideras av TaskController; null betyder här enbart "hittades inte".
         Task task = userTasks.stream()
             .filter(item -> item.getId() == taskId)
             .findFirst()
             .orElse(null);
-        if (task == null || request.getTitle() == null || request.getTitle().trim().isEmpty()) {
+        if (task == null) {
             return null;
         }
 

@@ -1,7 +1,9 @@
 package se.devsecops.backend.controller;
 
-import java.util.List;
+import java.util.Map;
 
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -22,16 +24,45 @@ public class TaskController {
     }
 
     @GetMapping("/api/users/{email}/tasks")
-    public List<Task> getTasks(@PathVariable String email) {
-        return userService.getTasks(email);
+    public ResponseEntity<?> getTasks(@PathVariable String email) {
+        ResponseEntity<?> lookupError = userLookupError(email);
+        if (lookupError != null) {
+            return lookupError;
+        }
+        return ResponseEntity.ok(userService.getTasks(email));
     }
 
     @PutMapping("/api/users/{email}/tasks/{taskId}")
-    public Task updateTask(
+    public ResponseEntity<?> updateTask(
         @PathVariable String email,
         @PathVariable long taskId,
         @RequestBody UpdateTaskRequest request
     ) {
-        return userService.updateTask(email, taskId, request);
+        ResponseEntity<?> lookupError = userLookupError(email);
+        if (lookupError != null) {
+            return lookupError;
+        }
+        if (request.getTitle() == null || request.getTitle().trim().isEmpty()) {
+            return ResponseEntity.badRequest()
+                .body(Map.of("message", "Title must not be empty"));
+        }
+
+        Task task = userService.updateTask(email, taskId, request);
+        if (task == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(Map.of("message", "Task not found"));
+        }
+        return ResponseEntity.ok(task);
+    }
+
+    private ResponseEntity<?> userLookupError(String email) {
+        String error = userService.getUserLookupError(email);
+        if (error == null) {
+            return null;
+        }
+        HttpStatus status = "User not found".equals(error)
+            ? HttpStatus.NOT_FOUND
+            : HttpStatus.BAD_REQUEST;
+        return ResponseEntity.status(status).body(Map.of("message", error));
     }
 }

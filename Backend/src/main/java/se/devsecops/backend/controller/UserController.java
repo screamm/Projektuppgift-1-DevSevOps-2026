@@ -97,23 +97,36 @@ public class UserController {
     }
 
     @GetMapping("/{email}/settings")
-    public ProfileResponse getSettingsProfile(@PathVariable String email) {
-        return userService.getSettingsProfile(email);
+    public ResponseEntity<ProfileResponse> getSettingsProfile(@PathVariable String email) {
+        ProfileResponse response = userService.getSettingsProfile(email);
+        return ResponseEntity.status(statusFor(response)).body(response);
     }
 
     @PatchMapping("/{email}")
-    public ProfileResponse updateSettingsProfile(
+    public ResponseEntity<ProfileResponse> updateSettingsProfile(
         @PathVariable String email,
         @RequestBody UpdateProfileRequest request
     ) {
-        return userService.updateProfile(email, request);
+        ProfileResponse response = userService.updateProfile(email, request);
+        return ResponseEntity.status(statusFor(response)).body(response);
     }
 
     @PatchMapping("/{email}/password")
-    public ApiResponse changePassword(
+    public ResponseEntity<ApiResponse> changePassword(
         @PathVariable String email,
         @RequestBody ChangePasswordRequest request
     ) {
-        return userService.changePassword(email, request);
+        ApiResponse response = userService.changePassword(email, request);
+        return ResponseEntity.status(statusFor(response)).body(response);
+    }
+
+    private HttpStatus statusFor(ApiResponse response) {
+        if (response.isSuccess()) {
+            return HttpStatus.OK;
+        }
+        if ("User not found".equals(response.getMessage())) {
+            return HttpStatus.NOT_FOUND;
+        }
+        return HttpStatus.BAD_REQUEST;
     }
 }

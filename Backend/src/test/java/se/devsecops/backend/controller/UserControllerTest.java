@@ -15,12 +15,16 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
+import se.devsecops.backend.model.ApiResponse;
+import se.devsecops.backend.model.ChangePasswordRequest;
 import se.devsecops.backend.model.CreateUserRequest;
 import se.devsecops.backend.model.CreateUserResponse;
 import se.devsecops.backend.model.DeleteUserResponse;
 import se.devsecops.backend.model.ListUsersResponse;
+import se.devsecops.backend.model.ProfileResponse;
 import se.devsecops.backend.model.UpdatePasswordRequest;
 import se.devsecops.backend.model.UpdatePasswordResponse;
+import se.devsecops.backend.model.UpdateProfileRequest;
 import se.devsecops.backend.model.UserResponse;
 import se.devsecops.backend.service.UserService;
 
@@ -99,5 +103,94 @@ class UserControllerTest {
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertSame(expectedResponse, response.getBody());
         verify(userService).updatePassword("test@example.com", request);
+    }
+
+    @Test
+    void getSettingsProfileReturnsNotFoundWhenUserIsMissing() {
+        ProfileResponse expectedResponse =
+            new ProfileResponse(false, "User not found", null, null);
+        when(userService.getSettingsProfile("missing@example.com"))
+            .thenReturn(expectedResponse);
+
+        ResponseEntity<ProfileResponse> response =
+            userController.getSettingsProfile("missing@example.com");
+
+        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+        assertSame(expectedResponse, response.getBody());
+    }
+
+    @Test
+    void getSettingsProfileReturnsOkWhenUserExists() {
+        ProfileResponse expectedResponse =
+            new ProfileResponse(true, "Profile loaded", "Test User", "test@example.com");
+        when(userService.getSettingsProfile("test@example.com"))
+            .thenReturn(expectedResponse);
+
+        ResponseEntity<ProfileResponse> response =
+            userController.getSettingsProfile("test@example.com");
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertSame(expectedResponse, response.getBody());
+    }
+
+    @Test
+    void updateSettingsProfileReturnsBadRequestWhenUsernameIsMissing() {
+        UpdateProfileRequest request = new UpdateProfileRequest();
+        ProfileResponse expectedResponse =
+            new ProfileResponse(false, "Username is required", "Old Name", "test@example.com");
+        when(userService.updateProfile("test@example.com", request))
+            .thenReturn(expectedResponse);
+
+        ResponseEntity<ProfileResponse> response =
+            userController.updateSettingsProfile("test@example.com", request);
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertSame(expectedResponse, response.getBody());
+    }
+
+    @Test
+    void updateSettingsProfileReturnsNotFoundWhenUserIsMissing() {
+        UpdateProfileRequest request = new UpdateProfileRequest();
+        ProfileResponse expectedResponse =
+            new ProfileResponse(false, "User not found", null, null);
+        when(userService.updateProfile("missing@example.com", request))
+            .thenReturn(expectedResponse);
+
+        ResponseEntity<ProfileResponse> response =
+            userController.updateSettingsProfile("missing@example.com", request);
+
+        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+        assertSame(expectedResponse, response.getBody());
+    }
+
+    @Test
+    void changePasswordReturnsNotFoundWhenUserIsMissing() {
+        ChangePasswordRequest request =
+            new ChangePasswordRequest("password1", "newpassword");
+        ApiResponse expectedResponse = new ApiResponse(false, "User not found");
+        when(userService.changePassword("missing@example.com", request))
+            .thenReturn(expectedResponse);
+
+        ResponseEntity<ApiResponse> response =
+            userController.changePassword("missing@example.com", request);
+
+        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+        assertSame(expectedResponse, response.getBody());
+    }
+
+    @Test
+    void changePasswordReturnsBadRequestWhenCurrentPasswordIsWrong() {
+        ChangePasswordRequest request =
+            new ChangePasswordRequest("wrongpassword", "newpassword");
+        ApiResponse expectedResponse =
+            new ApiResponse(false, "Current password is incorrect");
+        when(userService.changePassword("test@example.com", request))
+            .thenReturn(expectedResponse);
+
+        ResponseEntity<ApiResponse> response =
+            userController.changePassword("test@example.com", request);
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertSame(expectedResponse, response.getBody());
     }
 }
