@@ -70,6 +70,10 @@
                 <version>3.13.0</version>
                 <configuration>
                     <release>${java.version}</release>
+                    <!-- Spring Framework 6 läser parameternamn (t.ex. @PathVariable email)
+                         via reflektion och kräver -parameters; utan starter-parent måste
+                         flaggan sättas explicit, annars 500 på alla {email}-endpoints. -->
+                    <parameters>true</parameters>
                 </configuration>
             </plugin>
             <!-- OWASP Dependency-Check körs via profilen "security" (se nedan),
